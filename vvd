@@ -1,0 +1,20 @@
+#!/bin/bash
+
+[ $# -gt 2 ] || [ $# -eq 0 ] && { echo -e "\nUsage: $(basename "$0") <in.vcf[.gz]> [#lines]\n" 1>&2; exit 1; }
+in_vcf=$1
+n_lines=0
+[[ $# -eq 2 ]] && { n_lines=$2; }
+[[ ! -f $in_vcf ]] && { echo "[ERROR] $in_vcf does not exist" 1>&2; exit 1; }
+
+file_=$(file "$in_vcf")
+filetype='none'
+[[ $file_ =~ .+ASCII.+ ]] && { filetype='vcf'; }
+[[ $file_ =~ .+compressed.+ ]] && { filetype='gz'; }
+[[ $filetype = "none" ]] && { echo "[ERROR] $in_vcf file format is ${file_}"; exit 1; }
+
+cmd="cat $in_vcf"
+[[ "$in_vcf" =~ .vcf.gz$ ]] && { cmd="zcat $in_vcf"; }
+[[ $n_lines -eq 0 ]] && { cmd="$cmd | grep -v \"^##\" | vd"; }
+[[ $n_lines -gt 0 ]] && { cmd="$cmd | grep -v \"^##\" | head -n $(( $n_lines + 1 )) | vd"; }
+#echo $cmd 
+eval "$cmd"
